@@ -1,0 +1,2 @@
+Q1)Create a sample spring boot application and configure H2 in memory database dependency.
+Q3)Create a Employee table (id, name, designation) under H2 database and inserts few sample records under that table at startup.
