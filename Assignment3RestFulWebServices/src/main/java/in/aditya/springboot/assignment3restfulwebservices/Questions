@@ -1,0 +1,78 @@
+Q1)Internationalization A) Add support for Internationalization in your application allowing messages to be shown in English, German and Swedish, keeping English as default. B) Create a GET request which takes "username" as param and shows a localized message "Hello Username". (Use parameters in message properties)
+
+Answer Internationalization
+       Add dependency for Spring Boot starter web and messages:
+       Configuration for i18n (InternationalizationConfig.java)
+       Create message files in src/main/resources
+       InternationalizationController.java
+
+Q2)Content Negotiation A) Create POST Method to create user details which can accept XML for user creation. B) Create GET Method to fetch the list of users in XML format.
+Answer: Content Negotiation
+        Accept XML and JSON for user creation
+        Configure Jackson XML dependency in pom.xml
+        UserController.java
+        POST /users (Accepts JSON/XML)
+        GET /users (Returns XML format)
+
+Q3)Swagger A) Configure the swagger plugin and create a document of the following methods: Get details of the User using GET request. Save details of the user using POST request. Delete a user using DELETE request. B) In swagger documentation, add the description of each class and URI so that in swagger UI the purpose of class and URI is clear.
+Answer: Add Swagger dependencies in pom.xml
+        SwaggerConfig.java
+        Swagger annotations in UserController.java
+        Swagger UI:
+        http://localhost:8080/swagger-ui.html
+
+Q4)Static and Dynamic filtering A) Create API which saves details of User (along with the password) but on successfully saving returns only non-critical data. (Use static filtering) B) Create another API that does the same by using Dynamic Filtering.
+Answer: User model with JsonIgnoreProperties (Static filtering)
+        added anotation in Users.java
+          Static
+        //@JsonIgnoreProperties(value = {"password"})
+           Dynamic
+        //@JsonFilter("UserFilter")
+
+        and Added this to UserController
+            // Dynamic Filtering
+            @GetMapping("/filtered")
+            public MappingJacksonValue getFilteredUsers() {
+                List<User> filteredUsers = users;
+                SimpleBeanPropertyFilter filter = SimpleBeanPropertyFilter.filterOutAllExcept("id", "name");
+
+                FilterProvider filters = new SimpleFilterProvider().addFilter("UserFilter", filter);
+
+                MappingJacksonValue mapping = new MappingJacksonValue(filteredUsers);
+                mapping.setFilters(filters);
+
+                return mapping;
+            }
+
+Q5)Versioning Restful APIs Create 2 API for showing user details. The first api should return only basic details of the user and the other API should return more/enhanced details of the user, Now apply versioning using the following methods: A) MimeType Versioning B) Request Parameter versioning C) URI versioning D) Custom Header Versioning
+ Answer:  Created two version to return Name Present in versioning Pakages
+Q6)HATEOAS A) Configure hateoas with your springboot application. Create an api which returns User Details along with url to show all topics.
+  Answer:
+  Implemented in existing code i.e UserController for that I have commented Filtering Anotation in Users
+    //Hateoas
+       @GetMapping
+       public List<User> getUsers() {
+           return users.stream()
+                   .map(user -> {
+                       // 🔗 Add self-link for each user
+                       Link selfLink = linkTo(methodOn(UserController.class).getUser(user.getId())).withSelfRel();
+                       user.add(selfLink);
+                       return user;
+                   }).collect(Collectors.toList());
+       }
+
+
+       //Hateoas
+       @Operation(summary = "Get user details", description = "Fetch user details by ID")
+       @GetMapping("/{id}")
+       public User getUser(@PathVariable int id) {
+           User user = users.stream().filter(u -> u.getId() == id).findFirst().orElse(null);
+
+           if (user == null) return null;
+
+           Link selfLink = linkTo(methodOn(UserController.class).getUser(id)).withSelfRel();
+           Link allUsersLink = linkTo(methodOn(UserController.class).getUsers()).withRel("all-users");
+           user.add(selfLink, allUsersLink);
+           return user;
+       }
+   }
